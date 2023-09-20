@@ -1,3 +1,6 @@
 [submodule "pdf-parser"]
 	path = pdf-parser
 	url = git@github.com:mnsavage/pdf-parser.git
+[submodule "pdf_parser"]
+	path = pdf_parser
+	url = git@github.com:mnsavage/pdf_parser.git
