@@ -23,7 +23,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install black pytest
         pip install -r tests/requirements.txt 
-        pip install -r pdf_parser/tests/requirements.txt
 
     - name: Run Black
       run: |
@@ -32,7 +31,7 @@ jobs:
 
     - name: Run pytest
       run: |
-        pytest  # Run your pytest tests
+        make test  # Run your pytest tests
 
     - name: Complete PR Check
       run: |

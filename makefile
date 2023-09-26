@@ -1,5 +1,5 @@
 test:
-	pytest
+	pytest tests/
 
 lint:
 	find . -name "*.py" | xargs black
