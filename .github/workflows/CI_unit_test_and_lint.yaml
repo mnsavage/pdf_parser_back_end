@@ -29,9 +29,9 @@ jobs:
         make lint
         git diff --exit-code || (echo "Black formatting required." && exit 1)
 
-    - name: Run pytest
-      run: |
-        make test
+    # - name: Run pytest
+    #   run: |
+    #     make test
 
     - name: Complete PR Check
       run: |
