@@ -2,7 +2,7 @@ test:
 	pytest tests/
 
 lint:
-	find . -name "*.py" | xargs black
+	black src/
 
 update_submodule:
 	git submodule update --remote

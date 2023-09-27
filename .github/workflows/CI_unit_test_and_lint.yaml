@@ -26,12 +26,12 @@ jobs:
 
     - name: Run Black
       run: |
-        black .  # Format all Python files in the repository
+        make lint
         git diff --exit-code || (echo "Black formatting required." && exit 1)
 
     - name: Run pytest
       run: |
-        make test  # Run your pytest tests
+        make test
 
     - name: Complete PR Check
       run: |
