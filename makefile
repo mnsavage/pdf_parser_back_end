@@ -2,7 +2,7 @@ test:
 	pytest tests/
 
 lint:
-	black src/
+	black api/
 
 update_submodule:
 	git submodule update --remote
