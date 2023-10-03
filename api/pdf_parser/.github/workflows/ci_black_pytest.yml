@@ -22,16 +22,16 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install black pytest
-        make install_test
+        pip install -r tests/requirements.txt  # Install test dependencies from requirements.txt
 
     - name: Run Black
       run: |
-        make lint
+        black .  # Format all Python files in the repository
         git diff --exit-code || (echo "Black formatting required." && exit 1)
 
     - name: Run pytest
       run: |
-        make test
+        pytest  # Run your pytest tests
 
     - name: Complete PR Check
       run: |
