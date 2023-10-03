@@ -2,6 +2,7 @@ import base64
 from unittest.mock import patch
 from api.upload.post import handler
 from api.upload.post import ensure_base64_padding
+
 @patch("api.upload.post.extract_text")
 def test_post_handler_success(mock_extract_text):
     encoded_pdf = base64.b64encode(b"dummy PDF content").decode()
