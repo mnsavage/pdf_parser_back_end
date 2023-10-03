@@ -5,14 +5,6 @@ from pdfminer.high_level import extract_text
 
 
 def handler(event, context):
-    # Check if the body is base64 encoded
-    if not event.get("isBase64Encoded"):
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"message": "Expected the body to be base64 encoded."}),
-            "headers": {"Content-Type": "application/json"},
-        }
-
     # Decode the PDF from the base64 encoded request body
 
     encoded_str = ensure_base64_padding(event["body"])
