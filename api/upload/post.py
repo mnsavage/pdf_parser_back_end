@@ -14,11 +14,11 @@ def handler(event, context):
         }
 
     # Decode the PDF from the base64 encoded request body
-    
+
     encoded_str = ensure_base64_padding(event["body"])
 
     pdf_content = base64.b64decode(encoded_str)
-    
+
     # Use pdfminer.six to extract text from the PDF
     text = extract_text(BytesIO(pdf_content))
 
@@ -31,13 +31,14 @@ def handler(event, context):
         "headers": {"Content-Type": "application/json"},
     }
 
+
 def ensure_base64_padding(encoded_str):
-    '''
+    """
     Description: checks for incorrect base64 padding and if exist fixes it
     encoded_str(str): the encoded string to check for incorrect padding
-    '''
+    """
     missing_padding = len(encoded_str) % 4
     if missing_padding:
-        encoded_str += '=' * (4 - missing_padding)
+        encoded_str += "=" * (4 - missing_padding)
 
     return encoded_str
