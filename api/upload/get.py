@@ -1,4 +1,7 @@
-import json
+import os
+from api.response_maker import make_response
+
+cloudfront_url = os.environ.get("CLOUDFRONT_URL")
 
 
 def handler(event, context):
@@ -17,14 +20,12 @@ def handler(event, context):
         },
     ]
 
-    # Prepare the response
-    response = {
+    # Prepare the body
+    body = {
         "message": "Retrieve PDF requirements successfully.",
         "header": pdf_requirements,
     }
 
-    return {
-        "statusCode": 200,
-        "body": json.dumps(response),
-        "headers": {"Content-Type": "application/json"},
-    }
+    return make_response(
+        status_code=200, access_control_allow_origin=cloudfront_url, body=body
+    )
