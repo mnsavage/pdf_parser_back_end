@@ -1,6 +1,6 @@
 import json
 from unittest.mock import patch
-from api.response_maker import make_response
+from api.utilities.response_maker import make_response
 
 def test_make_response():
     status_code = 200
