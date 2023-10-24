@@ -1,9 +1,15 @@
 import base64
 import os
+import sys
 from io import BytesIO
 from pdfminer.high_level import extract_text
 
-from utilities.response_maker import make_response
+# Check if NOT running on AWS Lambda
+if "AWS_EXECUTION_ENV" not in os.environ:
+    from ..utilities.response_maker import make_response
+else:
+    sys.path.append("/opt/")
+    from response_maker import make_response
 
 
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
