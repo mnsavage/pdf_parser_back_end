@@ -1,6 +1,6 @@
 import os
 
-from ..utilities.response_maker import make_response
+from utilities.response_maker import make_response
 
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
 
