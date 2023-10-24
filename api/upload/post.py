@@ -2,7 +2,8 @@ import base64
 import os
 from io import BytesIO
 from pdfminer.high_level import extract_text
-from api.response_maker import make_response
+
+from ..utilities.response_maker import make_response
 
 
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
