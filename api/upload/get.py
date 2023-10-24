@@ -1,12 +1,14 @@
 import os
 import sys
 
+
 # Check if NOT running on AWS Lambda
 if "AWS_EXECUTION_ENV" not in os.environ:
     from ..utilities.response_maker import make_response
 else:
     sys.path.append("/opt/")
     from response_maker import make_response
+
 
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
 
