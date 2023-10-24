@@ -2,6 +2,7 @@ import base64
 import os
 from io import BytesIO
 from pdfminer.high_level import extract_text
+
 from ..utilities.response_maker import make_response
 
 
