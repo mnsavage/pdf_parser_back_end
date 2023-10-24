@@ -12,7 +12,6 @@ else:
     from response_maker import make_response
 
 
-
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
 
 
