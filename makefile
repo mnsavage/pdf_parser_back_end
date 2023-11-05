@@ -5,7 +5,8 @@ test:
 	pytest tests/
 
 lint:
-	black api/
+	black .
+	pylama .
 
 update_submodule:
 	git submodule update --remote
