@@ -1,8 +1,7 @@
-import base64
 import os
 import sys
-from io import BytesIO
-from pdfminer.high_level import extract_text
+import boto3
+import uuid
 
 # Check if NOT running on AWS Lambda
 if "AWS_EXECUTION_ENV" not in os.environ:
@@ -13,33 +12,36 @@ else:
 
 
 cloudfront_url = os.environ.get("CLOUDFRONT_URL")
+job_queue = os.environ.get("JOB_QUEUE")
+job_definition = os.environ.get("JOB_DEFINITION")
+storage_name = os.environ.get("STORAGE")
 
 
 def handler(event, context):
-    # Decode the PDF from the base64 encoded request body
+    UUID = str(uuid.uuid4())
+    encoded_pdf = event.get("body")
 
-    encoded_str = ensure_base64_padding(event["body"])
+    # store pdf
+    storage_client = boto3.client("s3")
+    storage_client.put_object(Bucket=storage_name, Key=UUID, Body=encoded_pdf)
 
-    pdf_content = base64.b64decode(encoded_str)
-
-    # Use pdfminer.six to extract text from the PDF
-    text = extract_text(BytesIO(pdf_content))
+    # submit batch job
+    batch_client = boto3.client("batch")
+    batch_client.submit_job(
+        jobName="pdf parser",
+        jobQueue=job_queue,
+        jobDefinition=job_definition,
+        containerOverrides={
+            "environment": [
+                {"name": "S3_BUCKET_NAME", "value": storage_name},
+                {"name": "S3_KEY", "value": UUID},
+            ]
+        },
+    )
 
     # Prepare the body
-    body = {"message": "PDF processed successfully.", "content": text}
+    body = {"message": "PDF parser job successfully submitted.", "UUID": UUID}
 
     return make_response(
         status_code=200, access_control_allow_origin=cloudfront_url, body=body
     )
-
-
-def ensure_base64_padding(encoded_str):
-    """
-    Description: checks for incorrect base64 padding and if exist fixes it
-    encoded_str(str): the encoded string to check for incorrect padding
-    """
-    missing_padding = len(encoded_str) % 4
-    if missing_padding:
-        encoded_str += "=" * (4 - missing_padding)
-
-    return encoded_str
