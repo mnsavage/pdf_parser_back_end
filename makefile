@@ -4,6 +4,10 @@ install_test:
 test:
 	pytest tests/
 
+
+install_tools:
+	pip install black  setuptools pylama pytest
+
 lint:
 	black .
 	pylama .
