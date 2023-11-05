@@ -9,7 +9,7 @@ install_tools:
 	pip install black  setuptools pylama pytest
 
 lint:
-	black .
+	black . --exclude 'api/pdf_parser/*'
 	pylama .
 
 update_submodule:
