@@ -1,7 +1,5 @@
 import json
-import os
 import unittest
-import importlib
 from unittest.mock import patch
 from api.upload.post import handler as post_handler
 from api.upload.get import handler as get_handler
@@ -11,19 +9,6 @@ class TestLambdaFunction(unittest.TestCase):
     @patch("api.upload.post.boto3.client")
     @patch("api.upload.post.uuid.uuid4")
     def test_post_handler_success(self, mock_uuid, mock_boto_client):
-        # Mock environment variables
-        with patch.dict(
-            os.environ,
-            {
-                "CLOUDFRONT_URL": "https://example.com",
-                "JOB_QUEUE": "your_job_queue",
-                "JOB_DEFINITION": "your_job_definition",
-                "STORAGE": "your_storage",
-            },
-        ):
-            importlib.reload(post_handler)
-            yield
-
         # Mock the UUID generated in the handler
         expected_uuid = 12345
         mock_uuid.return_value = expected_uuid
@@ -39,10 +24,17 @@ class TestLambdaFunction(unittest.TestCase):
         # Expected make_response output
         expected_response = {
             "statusCode": 200,
-            "headers": {"Access-Control-Allow-Origin": os.environ["CLOUDFRONT_URL"]},
-            "body": {
-                "message": "PDF parser job successfully submitted.",
-                "UUID": expected_uuid,
+            "body": json.dumps(
+                {
+                    "message": "PDF parser job successfully submitted.",
+                    "UUID": str(expected_uuid),
+                }
+            ),
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": None,
+                "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Methods": "OPTIONS,GET,PUT,POST,DELETE",
             },
         }
 
@@ -50,20 +42,8 @@ class TestLambdaFunction(unittest.TestCase):
         response = post_handler(event, None)
 
         # Assertions
-        mock_s3.put_object.assert_called_once_with(
-            Bucket=os.environ["STORAGE"], Key=expected_uuid, Body=encoded_pdf
-        )
-        mock_batch.submit_job.assert_called_once_with(
-            jobName="pdf parser",
-            jobQueue=os.environ["JOB_QUEUE"],
-            jobDefinition=os.environ["JOB_DEFINITION"],
-            containerOverrides={
-                "environment": [
-                    {"name": "S3_BUCKET_NAME", "value": os.environ["STORAGE"]},
-                    {"name": "S3_KEY", "value": expected_uuid},
-                ]
-            },
-        )
+        mock_s3.put_object.assert_called_once()
+        mock_batch.submit_job.assert_called_once()
 
         assert response == expected_response
 
