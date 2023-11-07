@@ -23,7 +23,9 @@ def handler(event, context):
 
     # store pdf
     storage_client = boto3.client("s3")
-    storage_client.put_object(Bucket=storage_name, Key=UUID, Body=encoded_pdf)
+    storage_client.put_object(
+        Bucket=storage_name, Key=f"{UUID}-encodedPDF", Body=encoded_pdf
+    )
 
     # submit batch job
     batch_client = boto3.client("batch")

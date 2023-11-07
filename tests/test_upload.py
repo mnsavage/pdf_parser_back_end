@@ -42,8 +42,20 @@ class TestLambdaFunction(unittest.TestCase):
         response = post_handler(event, None)
 
         # Assertions
-        mock_s3.put_object.assert_called_once()
-        mock_batch.submit_job.assert_called_once()
+        mock_s3.put_object.assert_called_once_with(
+            Bucket=None, Key=f"{expected_uuid}-encodedPDF", Body=encoded_pdf
+        )
+        mock_batch.submit_job.assert_called_once_with(
+            jobName="pdf parser",
+            jobQueue=None,
+            jobDefinition=None,
+            containerOverrides={
+                "environment": [
+                    {"name": "S3_BUCKET_NAME", "value": None},
+                    {"name": "S3_KEY", "value": str(expected_uuid)},
+                ]
+            },
+        )
 
         assert response == expected_response
 
