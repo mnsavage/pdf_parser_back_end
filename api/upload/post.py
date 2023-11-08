@@ -11,31 +11,32 @@ else:
     from response_maker import make_response
 
 
-cloudfront_url = os.environ.get("CLOUDFRONT_URL")
-job_queue = os.environ.get("JOB_QUEUE")
-job_definition = os.environ.get("JOB_DEFINITION")
-storage_name = os.environ.get("STORAGE")
-
-
 def handler(event, context):
     UUID = str(uuid.uuid4())
     encoded_pdf = event.get("body")
 
     # store pdf
-    storage_client = boto3.client("s3")
-    storage_client.put_object(
-        Bucket=storage_name, Key=f"{UUID}-encodedPDF", Body=encoded_pdf
-    )
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(os.environ.get("STORAGE"))
+
+    item = {
+        "uuid": UUID,
+        "job_status": "submitted",  # what is the status of the batch job
+        "encoded_pdf": encoded_pdf,
+        "job_output": None,  # this is where the batch job will put its pdf parser output later
+    }
+
+    table.put_item(Item=item)
 
     # submit batch job
     batch_client = boto3.client("batch")
     batch_client.submit_job(
         jobName="pdf parser",
-        jobQueue=job_queue,
-        jobDefinition=job_definition,
+        jobQueue=os.environ.get("JOB_QUEUE"),
+        jobDefinition=os.environ.get("JOB_DEFINITION"),
         containerOverrides={
             "environment": [
-                {"name": "S3_BUCKET_NAME", "value": storage_name},
+                {"name": "S3_BUCKET_NAME", "value": os.environ.get("STORAGE")},
                 {"name": "S3_KEY", "value": UUID},
             ]
         },
@@ -45,5 +46,7 @@ def handler(event, context):
     body = {"message": "PDF parser job successfully submitted.", "UUID": UUID}
 
     return make_response(
-        status_code=200, access_control_allow_origin=cloudfront_url, body=body
+        status_code=200,
+        access_control_allow_origin=os.environ.get("CLOUDFRONT_URL"),
+        body=body,
     )

@@ -7,14 +7,18 @@ from api.upload.get import handler as get_handler
 
 class TestLambdaFunction(unittest.TestCase):
     @patch("api.upload.post.boto3.client")
+    @patch("api.upload.post.boto3.resource")
     @patch("api.upload.post.uuid.uuid4")
-    def test_post_handler_success(self, mock_uuid, mock_boto_client):
+    def test_post_handler_success(
+        self, mock_uuid, mock_boto_resource, mock_boto_client
+    ):
         # Mock the UUID generated in the handler
         expected_uuid = 12345
         mock_uuid.return_value = expected_uuid
 
         # Mock the S3 and Batch client (same mock for simplicity)
-        mock_s3 = mock_boto_client.return_value
+        mock_storage = mock_boto_resource.return_value
+        mock_table = mock_storage.Table.return_value
         mock_batch = mock_boto_client.return_value
 
         # Input for the Lambda function
@@ -22,6 +26,12 @@ class TestLambdaFunction(unittest.TestCase):
         event = {"body": encoded_pdf}
 
         # Expected make_response output
+        expected_item = {
+            "uuid": str(expected_uuid),
+            "job_status": "submitted",
+            "encoded_pdf": encoded_pdf,
+            "job_output": None,
+        }
         expected_response = {
             "statusCode": 200,
             "body": json.dumps(
@@ -42,9 +52,7 @@ class TestLambdaFunction(unittest.TestCase):
         response = post_handler(event, None)
 
         # Assertions
-        mock_s3.put_object.assert_called_once_with(
-            Bucket=None, Key=f"{expected_uuid}-encodedPDF", Body=encoded_pdf
-        )
+        mock_table.put_item.assert_called_once_with(Item=expected_item)
         mock_batch.submit_job.assert_called_once_with(
             jobName="pdf parser",
             jobQueue=None,
