@@ -59,8 +59,8 @@ class TestLambdaFunction(unittest.TestCase):
             jobDefinition=None,
             containerOverrides={
                 "environment": [
-                    {"name": "S3_BUCKET_NAME", "value": None},
-                    {"name": "S3_KEY", "value": str(expected_uuid)},
+                    {"name": "DYNAMODB_NAME", "value": None},
+                    {"name": "DYNAMODB_KEY", "value": str(expected_uuid)},
                 ]
             },
         )

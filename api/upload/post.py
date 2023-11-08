@@ -36,8 +36,8 @@ def handler(event, context):
         jobDefinition=os.environ.get("JOB_DEFINITION"),
         containerOverrides={
             "environment": [
-                {"name": "S3_BUCKET_NAME", "value": os.environ.get("STORAGE")},
-                {"name": "S3_KEY", "value": UUID},
+                {"name": "DYNAMODB_NAME", "value": os.environ.get("STORAGE")},
+                {"name": "DYNAMODB_KEY", "value": UUID},
             ]
         },
     )
