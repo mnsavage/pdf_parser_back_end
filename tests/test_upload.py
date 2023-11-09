@@ -1,53 +1,90 @@
-import base64
 import json
+import unittest
 from unittest.mock import patch
 from api.upload.post import handler as post_handler
 from api.upload.get import handler as get_handler
-from api.upload.post import ensure_base64_padding
 
-@patch("api.upload.post.extract_text")
-def test_post_handler_success(mock_extract_text):
-    encoded_pdf = base64.b64encode(b"dummy PDF content").decode()
-    event = {
-        "body": encoded_pdf
-    }
-    mock_extract_text.return_value = "Extracted text from PDF."
-    
-    response = post_handler(event, None)
-    
-    assert response['statusCode'] == 200
-    assert "PDF processed successfully." in response['body']
-    assert "Extracted text from PDF." in response['body']
-    
-def test_no_padding_needed():
-    assert ensure_base64_padding("YW55IGNhcm5hbCBwbGVhc3VyZQ==") == "YW55IGNhcm5hbCBwbGVhc3VyZQ=="
 
-def test_padding_needed():
-    assert ensure_base64_padding("YW55IGNhcm5hbCBwbGVhc3VyZQ") == "YW55IGNhcm5hbCBwbGVhc3VyZQ=="
+class TestLambdaFunction(unittest.TestCase):
+    @patch("api.upload.post.boto3.client")
+    @patch("api.upload.post.boto3.resource")
+    @patch("api.upload.post.uuid.uuid4")
+    def test_post_handler_success(
+        self, mock_uuid, mock_boto_resource, mock_boto_client
+    ):
+        # Mock the UUID generated in the handler
+        expected_uuid = 12345
+        mock_uuid.return_value = expected_uuid
 
-def test_empty_string():
-    assert ensure_base64_padding("") == ""
-    
-def test_get_handler_success():
-    body_header = [
-        {
-            "title": "Page Formatting & Font",
-            "requirements": [
-                "Font: Use a standard 12-point font consistently throughout the document, including headings and subheadings, and must be black font including URLs",
-                'No Blank pages in the documents'
-                ],
-        },
-        {
-            "title": "Page Order & Section Formatting",
-            "requirements": [
-                "2 double spaces beneath title"
-            ]
+        # Mock the S3 and Batch client (same mock for simplicity)
+        mock_storage = mock_boto_resource.return_value
+        mock_table = mock_storage.Table.return_value
+        mock_batch = mock_boto_client.return_value
+
+        # Input for the Lambda function
+        encoded_pdf = "fake-base64-pdf-content"
+        event = {"body": encoded_pdf}
+
+        # Expected make_response output
+        expected_item = {
+            "uuid": str(expected_uuid),
+            "job_status": "submitted",
+            "encoded_pdf": encoded_pdf,
+            "job_output": None,
         }
-    ]
-    
-    response = get_handler(None, None)
-    body_dict = json.loads(response['body'])
+        expected_response = {
+            "statusCode": 200,
+            "body": json.dumps(
+                {
+                    "message": "PDF parser job successfully submitted.",
+                    "UUID": str(expected_uuid),
+                }
+            ),
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": None,
+                "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Methods": "OPTIONS,GET,PUT,POST,DELETE",
+            },
+        }
 
-    assert response['statusCode'] == 200
-    assert "Retrieve PDF requirements successfully." in response['body']
-    assert body_dict["header"] == body_header
+        # call post handler
+        response = post_handler(event, None)
+
+        # Assertions
+        mock_table.put_item.assert_called_once_with(Item=expected_item)
+        mock_batch.submit_job.assert_called_once_with(
+            jobName="pdf parser",
+            jobQueue=None,
+            jobDefinition=None,
+            containerOverrides={
+                "environment": [
+                    {"name": "DYNAMODB_NAME", "value": None},
+                    {"name": "DYNAMODB_KEY", "value": str(expected_uuid)},
+                ]
+            },
+        )
+
+        assert response == expected_response
+
+    def test_get_handler_success(self):
+        body_header = [
+            {
+                "title": "Page Formatting & Font",
+                "requirements": [
+                    "Font: Use a standard 12-point font consistently throughout the document, including headings and subheadings, and must be black font including URLs",
+                    "No Blank pages in the documents",
+                ],
+            },
+            {
+                "title": "Page Order & Section Formatting",
+                "requirements": ["2 double spaces beneath title"],
+            },
+        ]
+
+        response = get_handler(None, None)
+        body_dict = json.loads(response["body"])
+
+        assert response["statusCode"] == 200
+        assert "Retrieve PDF requirements successfully." in response["body"]
+        assert body_dict["header"] == body_header

@@ -4,8 +4,13 @@ install_test:
 test:
 	pytest tests/
 
+
+install_tools:
+	pip install black  setuptools pylama pytest
+
 lint:
-	black api/
+	black . --exclude 'api/pdf_parser/*'
+	pylama .
 
 update_submodule:
 	git submodule update --remote

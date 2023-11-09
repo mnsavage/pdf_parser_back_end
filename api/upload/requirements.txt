@@ -1,1 +1,1 @@
-pdfminer.six
+boto3

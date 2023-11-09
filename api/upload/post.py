@@ -1,8 +1,7 @@
-import base64
 import os
 import sys
-from io import BytesIO
-from pdfminer.high_level import extract_text
+import boto3
+import uuid
 
 # Check if NOT running on AWS Lambda
 if "AWS_EXECUTION_ENV" not in os.environ:
@@ -12,34 +11,42 @@ else:
     from response_maker import make_response
 
 
-cloudfront_url = os.environ.get("CLOUDFRONT_URL")
-
-
 def handler(event, context):
-    # Decode the PDF from the base64 encoded request body
+    UUID = str(uuid.uuid4())
+    encoded_pdf = event.get("body")
 
-    encoded_str = ensure_base64_padding(event["body"])
+    # store pdf
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(os.environ.get("STORAGE"))
 
-    pdf_content = base64.b64decode(encoded_str)
+    item = {
+        "uuid": UUID,
+        "job_status": "submitted",  # what is the status of the batch job
+        "encoded_pdf": encoded_pdf,
+        "job_output": None,  # this is where the batch job will put its pdf parser output later
+    }
 
-    # Use pdfminer.six to extract text from the PDF
-    text = extract_text(BytesIO(pdf_content))
+    table.put_item(Item=item)
 
-    # Prepare the body
-    body = {"message": "PDF processed successfully.", "content": text}
-
-    return make_response(
-        status_code=200, access_control_allow_origin=cloudfront_url, body=body
+    # submit batch job
+    batch_client = boto3.client("batch")
+    batch_client.submit_job(
+        jobName="pdf parser",
+        jobQueue=os.environ.get("JOB_QUEUE"),
+        jobDefinition=os.environ.get("JOB_DEFINITION"),
+        containerOverrides={
+            "environment": [
+                {"name": "DYNAMODB_NAME", "value": os.environ.get("STORAGE")},
+                {"name": "DYNAMODB_KEY", "value": UUID},
+            ]
+        },
     )
 
+    # Prepare the body
+    body = {"message": "PDF parser job successfully submitted.", "UUID": UUID}
 
-def ensure_base64_padding(encoded_str):
-    """
-    Description: checks for incorrect base64 padding and if exist fixes it
-    encoded_str(str): the encoded string to check for incorrect padding
-    """
-    missing_padding = len(encoded_str) % 4
-    if missing_padding:
-        encoded_str += "=" * (4 - missing_padding)
-
-    return encoded_str
+    return make_response(
+        status_code=200,
+        access_control_allow_origin=os.environ.get("CLOUDFRONT_URL"),
+        body=body,
+    )
