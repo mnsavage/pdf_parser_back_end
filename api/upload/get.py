@@ -1,6 +1,6 @@
 import os
 import sys
-
+import boto3
 
 # Check if NOT running on AWS Lambda
 if "AWS_EXECUTION_ENV" not in os.environ:
@@ -14,25 +14,20 @@ cloudfront_url = os.environ.get("CLOUDFRONT_URL")
 
 
 def handler(event, context):
-    # list of pdf requirements
-    pdf_requirements = [
-        {
-            "title": "Page Formatting & Font",
-            "requirements": [
-                "Font: Use a standard 12-point font consistently throughout the document, including headings and subheadings, and must be black font including URLs",
-                "No Blank pages in the documents",
-            ],
-        },
-        {
-            "title": "Page Order & Section Formatting",
-            "requirements": ["2 double spaces beneath title"],
-        },
-    ]
+    # Get uuid from in path (EX: upload/uuid)
+    UUID = str(event.get("pathParameters", {}).get("uuid"))
+
+    # Get item from database using uuid
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(os.environ.get("STORAGE"))
+
+    response = table.get_item(Key={"uuid": UUID})
 
     # Prepare the body
     body = {
-        "message": "Retrieve PDF requirements successfully.",
-        "header": pdf_requirements,
+        "message": "Batch job status and output",
+        "status": response.get("Item", {}).get("job_status"),
+        "job_output": response.get("Item", {}).get("job_output"),
     }
 
     return make_response(

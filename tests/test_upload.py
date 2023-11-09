@@ -67,24 +67,46 @@ class TestLambdaFunction(unittest.TestCase):
 
         assert response == expected_response
 
-    def test_get_handler_success(self):
-        body_header = [
-            {
-                "title": "Page Formatting & Font",
-                "requirements": [
-                    "Font: Use a standard 12-point font consistently throughout the document, including headings and subheadings, and must be black font including URLs",
-                    "No Blank pages in the documents",
-                ],
+    @patch("api.upload.get.boto3.resource")
+    def test_get_handler_success(self, mock_resource):
+        UUID = "123"
+        event = {"pathParameters": {"uuid": UUID}}
+        expected_job_status = "completed"
+        expected_job_output = "hello world from batch job"
+        expected_body = {
+            "message": "Batch job status and output",
+            "status": expected_job_status,
+            "job_output": expected_job_output,
+        }
+        expected__response = {
+            "statusCode": 200,
+            "body": json.dumps(expected_body),
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": None,
+                "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Methods": "OPTIONS,GET,PUT,POST,DELETE",
             },
-            {
-                "title": "Page Order & Section Formatting",
-                "requirements": ["2 double spaces beneath title"],
-            },
-        ]
+        }
 
-        response = get_handler(None, None)
-        body_dict = json.loads(response["body"])
+        # Mock database
+        expected_item = {
+            "Item": {
+                "uuid": "123",
+                "encoded_pdf": "fake-base64-pdf-content",
+                "job_status": expected_job_status,
+                "job_output": expected_job_output,
+            }
+        }
+        mock_storage = mock_resource.return_value
+        mock_table = mock_storage.Table.return_value
+        mock_table.get_item.return_value = expected_item
 
-        assert response["statusCode"] == 200
-        assert "Retrieve PDF requirements successfully." in response["body"]
-        assert body_dict["header"] == body_header
+        # Get handler
+        response = get_handler(event, None)
+
+        # Assertions
+        mock_resource.assert_called_once_with("dynamodb")
+        mock_storage.Table.assert_called_once_with(None)
+        mock_table.get_item.assert_called_once_with(Key={"uuid": UUID})
+        assert response == expected__response
