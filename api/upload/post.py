@@ -15,19 +15,6 @@ def handler(event, context):
     UUID = str(uuid.uuid4())
     encoded_pdf = event.get("body")
 
-    # store pdf
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table(os.environ.get("STORAGE"))
-
-    item = {
-        "uuid": UUID,
-        "job_status": "submitted",  # what is the status of the batch job
-        "encoded_pdf": encoded_pdf,
-        "job_output": None,  # this is where the batch job will put its pdf parser output later
-    }
-
-    table.put_item(Item=item)
-
     # submit batch job
     batch_client = boto3.client("batch")
     batch_client.submit_job(
@@ -41,6 +28,19 @@ def handler(event, context):
             ]
         },
     )
+
+    # store pdf
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(os.environ.get("STORAGE"))
+
+    item = {
+        "uuid": UUID,
+        "job_status": "submitted",  # what is the status of the batch job
+        "encoded_pdf": encoded_pdf,
+        "job_output": None,  # this is where the batch job will put its pdf parser output later
+    }
+
+    table.put_item(Item=item)
 
     # Prepare the body
     body = {"message": "PDF parser job successfully submitted.", "UUID": UUID}
