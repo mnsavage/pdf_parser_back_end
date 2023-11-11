@@ -13,12 +13,14 @@ else:
 
 def handler(event, context):
     UUID = str(uuid.uuid4())
+    job_name = f"pdf_parser_{UUID}"
     encoded_pdf = event.get("body")
+    print(f"job name: {job_name}")
 
     # submit batch job
     batch_client = boto3.client("batch")
     batch_client.submit_job(
-        jobName="pdf parser",
+        jobName=job_name,
         jobQueue=os.environ.get("JOB_QUEUE"),
         jobDefinition=os.environ.get("JOB_DEFINITION"),
         containerOverrides={

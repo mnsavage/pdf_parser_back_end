@@ -54,7 +54,7 @@ class TestLambdaFunction(unittest.TestCase):
         # Assertions
         mock_table.put_item.assert_called_once_with(Item=expected_item)
         mock_batch.submit_job.assert_called_once_with(
-            jobName="pdf parser",
+            jobName=f"pdf_parser_{expected_uuid}",
             jobQueue=None,
             jobDefinition=None,
             containerOverrides={
