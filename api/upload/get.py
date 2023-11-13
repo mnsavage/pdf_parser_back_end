@@ -30,6 +30,14 @@ def handler(event, context):
         "job_output": response.get("Item", {}).get("job_output"),
     }
 
+    status_code = None
+    if body["job_status"] == "completed":
+        status_code = 200
+    elif body["job_status"] == "submitted":
+        status_code = 202
+    else:
+        status_code = 404
+
     return make_response(
-        status_code=200, access_control_allow_origin=cloudfront_url, body=body
+        status_code=status_code, access_control_allow_origin=cloudfront_url, body=body
     )
