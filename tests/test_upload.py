@@ -75,7 +75,7 @@ class TestLambdaFunction(unittest.TestCase):
         expected_job_output = "hello world from batch job"
         expected_body = {
             "message": "Batch job status and output",
-            "status": expected_job_status,
+            "job_status": expected_job_status,
             "job_output": expected_job_output,
         }
         expected__response = {

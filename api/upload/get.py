@@ -26,7 +26,7 @@ def handler(event, context):
     # Prepare the body
     body = {
         "message": "Batch job status and output",
-        "status": response.get("Item", {}).get("job_status"),
+        "job_status": response.get("Item", {}).get("job_status"),
         "job_output": response.get("Item", {}).get("job_output"),
     }
 
