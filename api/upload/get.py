@@ -38,6 +38,7 @@ def handler(event, context):
         status_code = 202
     else:
         status_code = 404
+        table.delete_item(Key={"uuid": UUID})
 
     return make_response(
         status_code=status_code, access_control_allow_origin=cloudfront_url, body=body

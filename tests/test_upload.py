@@ -115,6 +115,6 @@ def test_get_handler(
     mock_resource.assert_called_once_with("dynamodb")
     mock_storage.Table.assert_called_once_with(None)
     mock_table.get_item.assert_called_once_with(Key={"uuid": UUID})
-    if expected_status_code == 200:
+    if expected_status_code == 200 or expected_status_code == 404:
         mock_table.delete_item.assert_called_once_with(Key={"uuid": UUID})
     assert response == expected__response
