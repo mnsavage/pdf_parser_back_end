@@ -33,6 +33,7 @@ def handler(event, context):
     status_code = None
     if body["job_status"] == "completed":
         status_code = 200
+        table.delete_item(Key={"uuid": UUID})
     elif body["job_status"] == "submitted":
         status_code = 202
     else:
