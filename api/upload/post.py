@@ -17,6 +17,10 @@ def handler(event, context):
     encoded_pdf = event.get("body")
     print(f"job name: {job_name}")
 
+    # store encoded pdf in s3 bucket
+    s3_client = boto3.client("s3")
+    s3_client.put_object(Bucket=os.environ.get("S3"), Key=UUID, Body=encoded_pdf)
+
     # submit batch job
     batch_client = boto3.client("batch")
     batch_client.submit_job(
@@ -25,20 +29,19 @@ def handler(event, context):
         jobDefinition=os.environ.get("JOB_DEFINITION"),
         containerOverrides={
             "environment": [
-                {"name": "DYNAMODB_NAME", "value": os.environ.get("STORAGE")},
+                {"name": "DYNAMODB_NAME", "value": os.environ.get("DYNAMOBD")},
                 {"name": "DYNAMODB_KEY", "value": UUID},
             ]
         },
     )
 
-    # store pdf
+    # store batch job information
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table(os.environ.get("STORAGE"))
+    table = dynamodb.Table(os.environ.get("DYNAMOBD"))
 
     item = {
         "uuid": UUID,
         "job_status": "submitted",  # what is the status of the batch job
-        "encoded_pdf": encoded_pdf,
         "job_output": None,  # this is where the batch job will put its pdf parser output later
     }
 

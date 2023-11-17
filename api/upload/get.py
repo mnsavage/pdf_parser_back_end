@@ -19,7 +19,7 @@ def handler(event, context):
 
     # Get item from database using uuid
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table(os.environ.get("STORAGE"))
+    table = dynamodb.Table(os.environ.get("DYNAMOBD"))
 
     response = table.get_item(Key={"uuid": UUID})
 

@@ -14,8 +14,9 @@ def test_post_handler_success(mock_uuid, mock_boto_resource, mock_boto_client):
     mock_uuid.return_value = expected_uuid
 
     # Mock the S3 and Batch client (same mock for simplicity)
-    mock_storage = mock_boto_resource.return_value
-    mock_table = mock_storage.Table.return_value
+    mock_s3 = mock_boto_resource.return_value
+    mock_dynamo = mock_boto_resource.return_value
+    mock_table = mock_dynamo.Table.return_value
     mock_batch = mock_boto_client.return_value
 
     # Input for the Lambda function
@@ -26,7 +27,6 @@ def test_post_handler_success(mock_uuid, mock_boto_resource, mock_boto_client):
     expected_item = {
         "uuid": str(expected_uuid),
         "job_status": "submitted",
-        "encoded_pdf": encoded_pdf,
         "job_output": None,
     }
     expected_response = {
@@ -49,6 +49,7 @@ def test_post_handler_success(mock_uuid, mock_boto_resource, mock_boto_client):
     response = post_handler(event, None)
 
     # Assertions
+    mock_s3.put_object(Bucket=None, Key=str(mock_uuid), Body=encoded_pdf)
     mock_table.put_item.assert_called_once_with(Item=expected_item)
     mock_batch.submit_job.assert_called_once_with(
         jobName=f"pdf_parser_{expected_uuid}",
@@ -104,8 +105,8 @@ def test_get_handler(
             "job_output": expected_job_output,
         }
     }
-    mock_storage = mock_resource.return_value
-    mock_table = mock_storage.Table.return_value
+    mock_dynamo = mock_resource.return_value
+    mock_table = mock_dynamo.Table.return_value
     mock_table.get_item.return_value = expected_item
 
     # Get handler
@@ -113,7 +114,7 @@ def test_get_handler(
 
     # Assertions
     mock_resource.assert_called_once_with("dynamodb")
-    mock_storage.Table.assert_called_once_with(None)
+    mock_dynamo.Table.assert_called_once_with(None)
     mock_table.get_item.assert_called_once_with(Key={"uuid": UUID})
     if expected_status_code == 200 or expected_status_code == 404:
         mock_table.delete_item.assert_called_once_with(Key={"uuid": UUID})
