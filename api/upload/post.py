@@ -29,7 +29,7 @@ def handler(event, context):
         jobDefinition=os.environ.get("JOB_DEFINITION"),
         containerOverrides={
             "environment": [
-                {"name": "DYNAMODB_NAME", "value": os.environ.get("DYNAMOBD")},
+                {"name": "DYNAMODB_NAME", "value": os.environ.get("DYNAMODB")},
                 {"name": "DYNAMODB_KEY", "value": UUID},
             ]
         },
@@ -37,7 +37,7 @@ def handler(event, context):
 
     # store batch job information
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table(os.environ.get("DYNAMOBD"))
+    table = dynamodb.Table(os.environ.get("DYNAMODB"))
 
     item = {
         "uuid": UUID,
