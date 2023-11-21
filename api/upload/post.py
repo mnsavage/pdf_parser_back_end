@@ -2,6 +2,7 @@ import os
 import sys
 import boto3
 import uuid
+import json
 
 # Check if NOT running on AWS Lambda
 if "AWS_EXECUTION_ENV" not in os.environ:
@@ -14,12 +15,13 @@ else:
 def handler(event, context):
     UUID = str(uuid.uuid4())
     job_name = f"pdf_parser_{UUID}"
-    encoded_pdf = event.get("body")
-    print(f"job name: {job_name}")
+    body = json.loads(event.get("body"))
 
     # store encoded pdf in s3 bucket
     s3_client = boto3.client("s3")
-    s3_client.put_object(Bucket=os.environ.get("S3"), Key=UUID, Body=encoded_pdf)
+    s3_client.put_object(
+        Bucket=os.environ.get("S3"), Key=UUID, Body=body.get("encoded_pdf")
+    )
 
     # submit batch job
     batch_client = boto3.client("batch")
@@ -31,6 +33,7 @@ def handler(event, context):
             "environment": [
                 {"name": "DYNAMODB_NAME", "value": os.environ.get("DYNAMODB")},
                 {"name": "DYNAMODB_KEY", "value": UUID},
+                {"name": "FILE_NAME", "value": body.get("file_name")},
             ]
         },
     )

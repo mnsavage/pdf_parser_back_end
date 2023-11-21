@@ -21,7 +21,9 @@ def test_post_handler_success(mock_uuid, mock_boto_resource, mock_boto_client):
 
     # Input for the Lambda function
     encoded_pdf = "fake-base64-pdf-content"
-    event = {"body": encoded_pdf}
+    event = {
+        "body": json.dumps({"encoded_pdf": encoded_pdf, "file_name": "file_name.pdf"})
+    }
 
     # Expected make_response output
     expected_item = {
@@ -59,6 +61,7 @@ def test_post_handler_success(mock_uuid, mock_boto_resource, mock_boto_client):
             "environment": [
                 {"name": "DYNAMODB_NAME", "value": None},
                 {"name": "DYNAMODB_KEY", "value": str(expected_uuid)},
+                {"name": "FILE_NAME", "value": "file_name.pdf"},
             ]
         },
     )
