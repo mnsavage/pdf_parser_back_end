@@ -55,6 +55,6 @@ def handler(event, context):
 
     return make_response(
         status_code=200,
-        access_control_allow_origin=os.environ.get("CLOUDFRONT_URL"),
+        access_control_allow_origin='*',
         body=body,
     )
