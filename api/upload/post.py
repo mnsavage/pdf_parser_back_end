@@ -13,9 +13,12 @@ else:
 
 
 def handler(event, context):
+    print(f'event: {event}')
     UUID = str(uuid.uuid4())
     job_name = f"pdf_parser_{UUID}"
     body = json.loads(event.get("body"))
+    print(f'body:{body}')
+    print(f'encoded pdf:{body.get("encoded_pdf")}')
 
     # store encoded pdf in s3 bucket
     s3_client = boto3.client("s3")
