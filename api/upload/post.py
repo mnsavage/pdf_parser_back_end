@@ -55,7 +55,7 @@ def handler(event, context):
         # Prepare the body
         body = {"message": "PDF parser job successfully submitted.", "UUID": UUID}
     except Exception as e:
-        make_response(access_control_allow_origin=os.environ.get("CLOUDFRONT_URL"), body=str(e))
+        return make_response(access_control_allow_origin=os.environ.get("CLOUDFRONT_URL"), body=str(e))
     return make_response(
         status_code=200,
         access_control_allow_origin=os.environ.get("CLOUDFRONT_URL"),
